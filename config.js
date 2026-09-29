@@ -1,5 +1,5 @@
 export const APP_NAME = 'SigmaNEST Comparator';
-export const VERSION = '0.2.0';
+export const VERSION = '0.3.0';
 // Development mode deliberately allows comparison without a licensing server.
 // Set this to false for any deployed/customer build.
 export const DEV_MODE = true;
