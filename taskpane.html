@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SigmaNEST Comparator</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <style>
+    :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#1f1f1f;background:#f7f7f7}
+    body{margin:0}.shell{padding:14px}.brand{display:flex;justify-content:space-between;align-items:flex-start}.brand h1{font-size:20px;margin:0 0 4px}.muted{color:#666;font-size:12px}.section{background:white;border:1px solid #ddd;border-radius:8px;padding:12px;margin:10px 0}.btn{width:100%;border:1px solid #bbb;background:#fff;border-radius:6px;padding:9px 10px;margin:5px 0;cursor:pointer;text-align:left}.btn.primary{background:#0f6cbd;color:white;border-color:#0f6cbd}.btn.green{background:#107c10;color:white;border-color:#107c10}.file-row{display:flex;align-items:center;gap:9px}.file-name{font-size:13px;word-break:break-word}.pill{font-size:10px;border-radius:10px;padding:2px 6px;background:#eee;color:#555}.pill-ok{background:#e7f4e7;color:#107c10}.pill-warn{background:#fff4ce;color:#805600}.tabs-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.tab-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #eee;font-size:12px}.tab-row input{margin:0}.tab-row span:nth-child(2){flex:1}.tiny-actions{display:flex;gap:5px}.tiny-actions .btn{width:auto;font-size:11px;padding:5px 7px}.status{font-size:12px;padding:8px;border-radius:6px;background:#eef3f8}.status[data-kind=ok]{background:#e7f4e7;color:#107c10}.status[data-kind=error]{background:#fde7e7;color:#a4262c}.license{font-size:11px;padding:3px 7px;border-radius:10px}.license.active{background:#e7f4e7;color:#107c10}.license.inactive{background:#fde7e7;color:#a4262c}.metric-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}.metric{background:#f5f5f5;border-radius:6px;padding:7px;text-align:center}.metric strong{display:block;font-size:18px}.metric span{display:block;font-size:10px;color:#666}.hidden{display:none}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="brand">
+      <div><h1 id="app-title">SigmaNEST Comparator</h1><div class="muted" id="version"></div></div>
+      <span id="license-status" class="license inactive">CHECKING…</span>
+    </div>
+    <div class="section">
+      <div class="muted">INPUT WORKBOOKS</div>
+      <input class="hidden" type="file" id="cl-file" accept=".xlsx,.xls,.xlsm" />
+      <input class="hidden" type="file" id="ws-file" accept=".xlsx,.xls,.xlsm" />
+      <button class="btn" id="btn-cl"><b>1. Select CL Workbook</b><br><span class="muted" id="cl-meta">Choose cutting list (.xlsx / .xls)</span><div class="file-name" id="cl-name"></div></button>
+      <button class="btn" id="btn-ws"><b>2. Select WS Workbook</b><br><span class="muted" id="ws-meta">Choose SigmaNEST worksheet (.xls / .xlsx)</span><div class="file-name" id="ws-name"></div></button>
+      <button class="btn" id="btn-refresh"><b>3. Refresh Inputs</b><br><span class="muted">Re-read the selected files.</span></button>
+    </div>
+    <div class="section">
+      <div class="tabs-head"><b>CL Tabs</b><span class="pill"><span id="selected-count">0</span> selected</span></div>
+      <div class="tiny-actions"><button class="btn" id="btn-select-bat">BAT…</button><button class="btn" id="btn-select-all">All</button><button class="btn" id="btn-clear-all">None</button></div>
+      <div id="tab-list"></div>
+    </div>
+    <div class="section">
+      <button class="btn primary" id="btn-run"><b>4. Run Comparison</b><br><span class="muted">Material + thickness + quantity + part/family checks.</span></button>
+      <button class="btn green" id="btn-revised"><b>5. Generate Revised WS</b><br><span class="muted">Safe changes only; unresolved items remain untouched.</span></button>
+      <button class="btn" id="btn-license"><b>Subscription / Account</b><br><span class="muted">Activate or check your service license.</span></button>
+    </div>
+    <div class="section">
+      <div class="muted">LAST RESULT</div><div class="metric-grid" id="result-grid"></div>
+      <div class="muted" style="margin-top:8px">See the SN Summary, SN Mismatch, SN Add, SN Remove and SN Part Review sheets.</div>
+      <div class="muted" id="revised-name" style="margin-top:4px"></div>
+    </div>
+    <div class="status" id="status">Loading SigmaNEST Comparator…</div>
+  </main>
+  <script type="module" src="./index.js"></script>
+</body>
+</html>
