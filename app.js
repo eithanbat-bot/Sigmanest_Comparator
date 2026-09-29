@@ -1,9 +1,9 @@
 import { APP_NAME, DEV_MODE, VERSION, defaultLicense } from './config.js';
 import { parseClFile, parseWsFile } from './parser.js';
 import { compare } from './comparisonEngine.js';
-import { MATERIAL_RULES, THICKNESS_RULES } from './rules.js';
+import { MATERIAL_RULES, THICKNESS_RULES, cloneDefaultRules } from './rules.js';
 import { checkLicense, activateLicense } from './license.js';
-import { loadState, persistCl, persistWs, persistSelectionAndResult } from './state.js';
+import { loadState, persistCl, persistWs, persistSelectionAndResult, persistRules } from './state.js';
 import { writeReports } from './excelWriter.js';
 import { buildRevisedWorkbook, triggerDownload, openRevisedWorkbookInExcel } from './revisedWs.js';
 import { detectJobNumber } from './textRules.js';
@@ -11,6 +11,9 @@ let clData;
 let wsData;
 let lastResult;
 let license = defaultLicense;
+let materialRules = cloneDefaultRules().materialRules;
+let thicknessRules = cloneDefaultRules().thicknessRules;
+let activeRuleTab = 'material';
 function el(id) { return document.getElementById(id); }
 function setStatus(text, kind = 'info') {
     const node = el('status');
@@ -101,6 +104,8 @@ async function ensureLoadedFromState() {
     // File bytes are intentionally not persisted in this MVP. The add-in requires selecting files once per Excel session.
     lastResult = s.result;
     license = s.license || defaultLicense;
+    if (Array.isArray(s.materialRules)) materialRules = s.materialRules;
+    if (Array.isArray(s.thicknessRules)) thicknessRules = s.thicknessRules;
 }
 export async function runComparison() {
     if (!(await requireLicense()))
@@ -113,9 +118,9 @@ export async function runComparison() {
     setStatus('Running comparison…');
     try {
         const job = detectJobNumber(`${clData.fileName} ${wsData.fileName}`);
-        lastResult = compare(clData.records, tabs, wsData.records, clData.fileName, wsData.fileName, job, MATERIAL_RULES, THICKNESS_RULES);
+        lastResult = compare(clData.records, tabs, wsData.records, clData.fileName, wsData.fileName, job, materialRules, thicknessRules);
         await persistSelectionAndResult(tabs, lastResult);
-        await writeReports(lastResult);
+        await writeReports(lastResult, { materialRules, thicknessRules });
         renderResults(lastResult);
         setStatus('Comparison complete. See the SN Summary and result sheets.', 'ok');
     }
@@ -198,6 +203,22 @@ export async function openLicenseDialog() {
     await requireLicense();
     setStatus(state.active ? 'License activated.' : (state.message || 'License activation failed.'), state.active ? 'ok' : 'error');
 }
+
+function renderRuleTables() {
+ const m=el('rules-material'), t=el('rules-thickness'); m.innerHTML=''; t.innerHTML='';
+ const mt=document.createElement('table'); mt.className='rule-table'; mt.innerHTML='<thead><tr><th>Active</th><th>Material A</th><th>Material B</th><th>Thickness</th><th>Reason / Notes</th><th></th></tr></thead><tbody></tbody>'; const mb=mt.querySelector('tbody');
+ materialRules.forEach((r,i)=>{const tr=document.createElement('tr'); tr.innerHTML=`<td><input type="checkbox" data-field="active" ${r.active?'checked':''}></td><td><input data-field="materialA" value="${esc(r.materialA)}"></td><td><input data-field="materialB" value="${esc(r.materialB)}"></td><td><input data-field="thicknessRule" type="number" step="0.1" value="${r.thicknessRule??''}"></td><td><input data-field="reason" value="${esc(r.reason||'')}"></td><td><button class="btn small danger" data-delete="${i}">×</button></td>`; tr.querySelectorAll('[data-field]').forEach(inp=>inp.addEventListener('change',()=>updateMaterialRule(i,tr))); tr.querySelector('[data-delete]').addEventListener('click',()=>{materialRules.splice(i,1);renderRuleTables()}); mb.appendChild(tr)}); m.appendChild(mt);
+ const tt=document.createElement('table'); tt.className='rule-table'; tt.innerHTML='<thead><tr><th>Active</th><th>Material Filter</th><th>From</th><th>To</th><th>Reason / Notes</th><th></th></tr></thead><tbody></tbody>'; const tb=tt.querySelector('tbody');
+ thicknessRules.forEach((r,i)=>{const tr=document.createElement('tr'); tr.innerHTML=`<td><input type="checkbox" data-field="active" ${r.active?'checked':''}></td><td><input data-field="materialFilter" value="${esc(r.materialFilter||'')}"></td><td><input data-field="fromThickness" type="number" step="0.1" value="${r.fromThickness??''}"></td><td><input data-field="toThickness" type="number" step="0.1" value="${r.toThickness??''}"></td><td><input data-field="reason" value="${esc(r.reason||'')}"></td><td><button class="btn small danger" data-delete="${i}">×</button></td>`; tr.querySelectorAll('[data-field]').forEach(inp=>inp.addEventListener('change',()=>updateThicknessRule(i,tr))); tr.querySelector('[data-delete]').addEventListener('click',()=>{thicknessRules.splice(i,1);renderRuleTables()}); tb.appendChild(tr)}); t.appendChild(tt);
+}
+function esc(v){return String(v??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function updateMaterialRule(i,tr){const q=f=>tr.querySelector(`[data-field="${f}"]`); materialRules[i]={...materialRules[i],active:q('active').checked,materialA:q('materialA').value.trim(),materialB:q('materialB').value.trim(),thicknessRule:q('thicknessRule').value===''?undefined:Number(q('thicknessRule').value),reason:q('reason').value.trim()};}
+function updateThicknessRule(i,tr){const q=f=>tr.querySelector(`[data-field="${f}"]`); thicknessRules[i]={...thicknessRules[i],active:q('active').checked,materialFilter:q('materialFilter').value.trim(),fromThickness:q('fromThickness').value===''?undefined:Number(q('fromThickness').value),toThickness:q('toThickness').value===''?undefined:Number(q('toThickness').value),reason:q('reason').value.trim()};}
+async function saveRules(){await persistRules(materialRules,thicknessRules);setStatus('Comparison rules saved. They will be used on the next run.','ok');}
+function switchRuleTab(tab){activeRuleTab=tab;el('rules-material').classList.toggle('hidden',tab!=='material');el('rules-thickness').classList.toggle('hidden',tab!=='thickness');el('rule-tab-material').classList.toggle('active',tab==='material');el('rule-tab-thickness').classList.toggle('active',tab==='thickness');el('btn-add-rule').textContent=tab==='material'?'+ Add Material Rule':'+ Add Thickness Rule';}
+function addRule(){if(activeRuleTab==='material') materialRules.push({active:true,materialA:'',materialB:'',reason:''}); else thicknessRules.push({active:true,materialFilter:'',fromThickness:'',toThickness:'',reason:''});renderRuleTables();}
+async function resetRules(){const d=cloneDefaultRules();materialRules=d.materialRules;thicknessRules=d.thicknessRules;renderRuleTables();await persistRules(materialRules,thicknessRules);setStatus('Rules reset to the original comparator defaults.','ok');}
+
 export function initUi() {
     el('version').textContent = `v${VERSION}`;
     el('app-title').textContent = APP_NAME;
@@ -209,6 +230,12 @@ export function initUi() {
     el('btn-revised').addEventListener('click', () => void generateRevisedWs());
     el('btn-refresh').addEventListener('click', () => void refreshInputs());
     el('btn-license').addEventListener('click', () => void openLicenseDialog());
+    el('rule-tab-material').addEventListener('click',()=>switchRuleTab('material'));
+    el('rule-tab-thickness').addEventListener('click',()=>switchRuleTab('thickness'));
+    el('btn-add-rule').addEventListener('click',addRule);
+    el('btn-save-rules').addEventListener('click',()=>void saveRules());
+    el('btn-reset-rules').addEventListener('click',()=>void resetRules());
+    renderRuleTables();
     el('btn-select-all').addEventListener('click', () => { el('tab-list').querySelectorAll('input').forEach(x => x.checked = true); updateSelectedCount(); });
     el('btn-select-bat').addEventListener('click', () => { el('tab-list').querySelectorAll('input').forEach(x => x.checked = /^BAT/i.test(x.dataset.sheet || '')); updateSelectedCount(); });
     el('btn-clear-all').addEventListener('click', () => { el('tab-list').querySelectorAll('input').forEach(x => x.checked = false); updateSelectedCount(); });

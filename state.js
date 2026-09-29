@@ -1,5 +1,5 @@
 import { STATE_KEY } from './config.js';
-let memory = { selectedTabs: [], license: { active: false } };
+let memory = { selectedTabs: [], license: { active: false }, materialRules: null, thicknessRules: null };
 function stripCl(cl) {
     const { sourceArrayBuffer: _buffer, ...rest } = cl;
     return rest;
@@ -55,6 +55,12 @@ export async function persistCl(cl) {
 export async function persistWs(ws) {
     const current = await loadState();
     current.ws = stripWs(ws);
+    await saveState(current);
+}
+export async function persistRules(materialRules, thicknessRules) {
+    const current = await loadState();
+    current.materialRules = materialRules;
+    current.thicknessRules = thicknessRules;
     await saveState(current);
 }
 export async function persistLicense(license) {
