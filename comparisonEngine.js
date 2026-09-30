@@ -137,10 +137,11 @@ export function compare(allClRecords, selectedTabs, wsRecords, clFileName, wsFil
         }
     }
     const removals = validWs
-        .filter(x => x.isFirstOfKey && !x.clPresent)
+        .filter(x => x.isFirstOfKey && !x.clPresent && !x.familyPresent)
         .sort((a, b) => a.source.sourceRow - b.source.sourceRow)
         .map((x, i) => ({
         sourceRow: x.source.sourceRow,
+        sourceRows: validWs.filter(y => y.recordKey.toLowerCase() === x.recordKey.toLowerCase()).map(y => y.source.sourceRow),
         partNoRaw: x.source.partNoRaw,
         materialRaw: x.source.materialRaw,
         thicknessRaw: x.source.thicknessRaw,
@@ -193,7 +194,8 @@ export function compare(allClRecords, selectedTabs, wsRecords, clFileName, wsFil
             row.materialMatch = eq(row.clMaterial, row.wsMaterial);
             row.thicknessMatch = row.wsThickness !== undefined && Math.abs(row.clThickness - row.wsThickness) < 1e-6;
             row.qtyMatch = row.wsQty !== undefined && Math.abs(row.clQty - row.wsQty) < 1e-6;
-            if (row.materialMatch && row.thicknessMatch && row.qtyMatch) {
+            const conflict = row.clMaterialConflict || row.clThicknessConflict || row.wsMaterialConflict || row.wsThicknessConflict;
+            if (row.materialMatch && row.thicknessMatch && row.qtyMatch && !conflict) {
                 row.status = 'Exact Match';
                 row.mismatchType = 'Exact Match';
                 exactMatches++;
