@@ -143,6 +143,7 @@ function body(sheet, startRow, values, cols) {
   r.values = normalized;
   r.format.font.name = 'Calibri';
   r.format.font.size = 10;
+  r.format.horizontalAlignment = 'Center';
   r.format.verticalAlignment = 'Center';
   r.format.wrapText = false;
   r.format.borders.getItem('EdgeBottom').style = 'Continuous';
@@ -374,7 +375,7 @@ export async function writeReports(
       x.partNoRaw, x.wsMaterial, x.clMaterial, x.wsThickness ?? '', x.clThickness, x.wsQty ?? '', x.clQty,
       x.mismatchType, x.sourceTabs, '', ''
     ]), 11);
-    setWidths(mismatch, { A: 120, B: 155, C: 155, D: 85, E: 85, F: 90, G: 90, H: 250, I: 275, J: 85, K: 220 });
+    setWidths(mismatch, { A: 105, B: 135, C: 135, D: 75, E: 75, F: 78, G: 78, H: 190, I: 205, J: 78, K: 165 });
     wrapColumns(mismatch, ['H', 'I', 'K'], 5, mismatchRows.length);
     align(mismatch, ['D', 'E', 'F', 'G', 'J'], 5, mismatchRows.length, 'Center');
     freeze(mismatch, 4);
@@ -486,6 +487,19 @@ export async function writeReports(
     align(data, ['A', 'F', 'G', 'I', 'J', 'K', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'W'], 2, dataRows.length, 'Center');
     freeze(data, 1);
     data.visibility = 'Hidden';
+
+    // Final pass: center every used/populated cell horizontally and vertically.
+    // This intentionally overrides sheet-specific alignments so every report tab
+    // has one consistent visual language.
+    for (const sheet of [summary, tab, mismatch, add, rem, review, audit, mr, tr]) {
+      const used = sheet.getUsedRangeOrNullObject();
+      used.load('isNullObject');
+      await context.sync();
+      if (!used.isNullObject) {
+        used.format.horizontalAlignment = 'Center';
+        used.format.verticalAlignment = 'Center';
+      }
+    }
 
     summary.activate();
     await context.sync();
