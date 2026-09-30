@@ -322,20 +322,31 @@ export async function writeReports(
       ['Parts requiring Part Review', result.partReviewCount],
       ['CL-side thickness/material conflicts', result.dataConflicts]
     ];
-    const cRange = summary.getRange('A17:D28');
-    cRange.values = countRows.map(x => [x[0], '', '', x[1]]);
-    summary.getRange('A17:C28').merge(false);
-    summary.getRange('A17:C28').format.fill.color = BLUE_PALE;
-    summary.getRange('A17:C28').format.font.name = 'Calibri';
-    summary.getRange('A17:C28').format.font.size = 10;
-    summary.getRange('A17:C28').format.font.bold = true;
-    summary.getRange('D17:D28').format.font.name = 'Calibri';
-    summary.getRange('D17:D28').format.font.size = 11;
-    summary.getRange('D17:D28').format.font.bold = true;
-    summary.getRange('D17:D28').format.horizontalAlignment = 'Right';
-    summary.getRange('A17:D28').format.borders.getItem('EdgeBottom').style = 'Continuous';
-    summary.getRange('A17:D28').format.borders.getItem('EdgeBottom').color = BORDER;
-    summary.getRange('A17:D28').format.rowHeight = 22;
+    for (let i = 0; i < countRows.length; i++) {
+      const row = 17 + i;
+      const label = summary.getRange(`A${row}:C${row}`);
+      label.merge(false);
+      label.getCell(0, 0).values = [[countRows[i][0]]];
+      label.format.fill.color = BLUE_PALE;
+      label.format.font.name = 'Calibri';
+      label.format.font.size = 10;
+      label.format.font.bold = true;
+      label.format.horizontalAlignment = 'Left';
+      label.format.verticalAlignment = 'Center';
+
+      const value = summary.getRange(`D${row}:E${row}`);
+      value.merge(false);
+      value.getCell(0, 0).values = [[countRows[i][1]]];
+      value.format.font.name = 'Calibri';
+      value.format.font.size = 11;
+      value.format.font.bold = true;
+      value.format.horizontalAlignment = 'Right';
+      value.format.verticalAlignment = 'Center';
+      value.format.rowHeight = 22;
+
+      summary.getRange(`A${row}:E${row}`).format.borders.getItem('EdgeBottom').style = 'Continuous';
+      summary.getRange(`A${row}:E${row}`).format.borders.getItem('EdgeBottom').color = BORDER;
+    }
 
     mergedValue(summary, 'A30:J30', 'Rule configuration used for this run: Material Rules and Thickness Rules sheets below.', { color: GREY, size: 9, height: 22 });
     setWidths(summary, {
