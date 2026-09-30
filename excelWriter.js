@@ -124,12 +124,12 @@ function header(sheet, row, cols, theme) {
   r.format.font.size = theme.size;
   r.format.horizontalAlignment = 'Center';
   r.format.verticalAlignment = 'Center';
-  r.format.wrapText = true;
+  r.format.wrapText = false;
   r.format.borders.getItem('EdgeTop').style = 'Continuous';
   r.format.borders.getItem('EdgeTop').color = theme.fill;
   r.format.borders.getItem('EdgeBottom').style = 'Continuous';
   r.format.borders.getItem('EdgeBottom').color = theme.fill;
-  r.format.rowHeight = 34;
+  r.format.rowHeight = 24;
 }
 
 function body(sheet, startRow, values, cols) {
@@ -155,11 +155,16 @@ function body(sheet, startRow, values, cols) {
   }
 }
 
-function wrapColumns(sheet, columns, startRow, rowCount) {
-  if (!rowCount) return;
-  for (const col of columns) {
-    sheet.getRange(`${col}${startRow}:${col}${startRow + rowCount - 1}`).format.wrapText = true;
-  }
+function fitColumns(sheet, address) {
+  const r = sheet.getRange(address);
+  r.format.wrapText = false;
+  r.format.autofitColumns();
+}
+
+function centerRange(sheet, address) {
+  const r = sheet.getRange(address);
+  r.format.horizontalAlignment = 'Center';
+  r.format.verticalAlignment = 'Center';
 }
 
 function align(sheet, columns, startRow, rowCount, direction) {
@@ -360,8 +365,8 @@ export async function writeReports(
     title(tab, 'CL Worksheet Tab Selection', 'E', 'Every sheet found in the selected CL workbook is listed below. Tick Include for the sheets that should feed the comparison.');
     header(tab, 4, ['Include', 'Sheet Name', 'Detected Header Row', 'Detected Part Rows', 'Status'], theme);
     body(tab, 5, tabRows, 5);
-    setWidths(tab, { A: 65, B: 225, C: 125, D: 125, E: 170 });
-    align(tab, ['A', 'C', 'D', 'E'], 5, tabRows.length, 'Center');
+    fitColumns(tab, `A4:E${Math.max(4, 4 + tabRows.length)}`);
+    align(tab, ['A', 'B', 'C', 'D', 'E'], 5, tabRows.length, 'Center');
     styleTabStatuses(tab, 5, tabRows);
     setRows(tab, 'A2:E2', 30);
     freeze(tab, 4);
@@ -375,9 +380,8 @@ export async function writeReports(
       x.partNoRaw, x.wsMaterial, x.clMaterial, x.wsThickness ?? '', x.clThickness, x.wsQty ?? '', x.clQty,
       x.mismatchType, x.sourceTabs, '', ''
     ]), 11);
-    setWidths(mismatch, { A: 105, B: 135, C: 135, D: 75, E: 75, F: 78, G: 78, H: 190, I: 205, J: 78, K: 165 });
-    wrapColumns(mismatch, ['H', 'I', 'K'], 5, mismatchRows.length);
-    align(mismatch, ['D', 'E', 'F', 'G', 'J'], 5, mismatchRows.length, 'Center');
+    fitColumns(mismatch, `A4:K${Math.max(4, 4 + mismatchRows.length)}`);
+    align(mismatch, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'], 5, mismatchRows.length, 'Center');
     freeze(mismatch, 4);
 
     const addRows = result.rows.filter(x => x.status === 'Add');
@@ -388,9 +392,8 @@ export async function writeReports(
     body(add, 5, addRows.map(x => [
       x.partNoRaw, x.description, x.clMaterial, x.clThickness, x.clQty, x.sourceTabs, 'ADD', x.mismatchType
     ]), 8);
-    setWidths(add, { A: 125, B: 250, C: 165, D: 90, E: 105, F: 230, G: 90, H: 220 });
-    wrapColumns(add, ['B', 'F', 'H'], 5, addRows.length);
-    align(add, ['D', 'E', 'G'], 5, addRows.length, 'Center');
+    fitColumns(add, `A4:H${Math.max(4, 4 + addRows.length)}`);
+    align(add, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], 5, addRows.length, 'Center');
     styleActionColumn(add, 5, addRows.map(() => 'ADD'), 'G');
     freeze(add, 4);
 
@@ -402,9 +405,8 @@ export async function writeReports(
     body(rem, 5, removeRows.map(x => [
       x.partNoRaw, x.materialCanonical, x.thicknessRaw ?? '', x.qtyRaw ?? '', x.sourceRow, 'REMOVE', x.reason, x.removeRank
     ]), 8);
-    setWidths(rem, { A: 125, B: 165, C: 90, D: 110, E: 80, F: 90, G: 260, H: 100 });
-    wrapColumns(rem, ['G'], 5, removeRows.length);
-    align(rem, ['C', 'D', 'E', 'F', 'H'], 5, removeRows.length, 'Center');
+    fitColumns(rem, `A4:H${Math.max(4, 4 + removeRows.length)}`);
+    align(rem, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], 5, removeRows.length, 'Center');
     styleActionColumn(rem, 5, removeRows.map(() => 'REMOVE'), 'F');
     freeze(rem, 4);
 
@@ -417,9 +419,8 @@ export async function writeReports(
       x.partNoRaw, x.partReviewWsPartNo ?? '', x.description, x.clMaterial, x.partReviewWsMaterial ?? '',
       x.clThickness, x.partReviewWsThickness ?? '', x.clQty, x.partReviewWsQty ?? '', x.familyKey, x.mismatchType, '', '', 'REVIEW'
     ]), 14);
-    setWidths(review, { A: 125, B: 135, C: 240, D: 165, E: 165, F: 90, G: 90, H: 80, I: 80, J: 125, K: 300, L: 85, M: 220, N: 85 });
-    wrapColumns(review, ['C', 'K', 'M'], 5, reviewRows.length);
-    align(review, ['F', 'G', 'H', 'I', 'L', 'N'], 5, reviewRows.length, 'Center');
+    fitColumns(review, `A4:N${Math.max(4, 4 + reviewRows.length)}`);
+    align(review, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'], 5, reviewRows.length, 'Center');
     styleActionColumn(review, 5, reviewRows.map(() => 'REVIEW'), 'N');
     freeze(review, 4);
 
@@ -437,9 +438,8 @@ export async function writeReports(
       result.exactMatches, result.totalMismatches, result.addCount, result.removeCount,
       result.partReviewCount, 'READY FOR REVIEW', 'Comparison run by SigmaNEST Comparator Office Add-in'
     ]], 14);
-    setWidths(audit, { A: 140, B: 280, C: 190, D: 90, E: 330, F: 90, G: 90, H: 85, I: 100, J: 80, K: 80, L: 95, M: 135, N: 250 });
-    wrapColumns(audit, ['E', 'N'], 5, Math.max(1, nextAuditRow - 4));
-    align(audit, ['A', 'D', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'], 5, Math.max(1, nextAuditRow - 4), 'Center');
+    fitColumns(audit, `A4:N${Math.max(4, nextAuditRow)}`);
+    align(audit, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'], 5, Math.max(1, nextAuditRow - 4), 'Center');
     freeze(audit, 4);
 
     const mr = context.workbook.worksheets.getItem('Material Rules');
@@ -448,9 +448,8 @@ export async function writeReports(
     const materialRuleRows = (rules.materialRules || []).map(x => [!!x.active, x.materialA || '', x.materialB || '', x.thicknessRule ?? '', x.reason || '']);
     header(mr, 4, ['Active', 'Material A', 'Material B', 'Thickness Rule (mm, blank = any)', 'Reason / Notes'], theme);
     body(mr, 5, materialRuleRows, 5);
-    setWidths(mr, { A: 65, B: 180, C: 180, D: 250, E: 330 });
-    align(mr, ['A', 'D'], 5, materialRuleRows.length, 'Center');
-    wrapColumns(mr, ['E'], 5, materialRuleRows.length);
+    fitColumns(mr, `A4:E${Math.max(4, 4 + materialRuleRows.length)}`);
+    align(mr, ['A', 'B', 'C', 'D', 'E'], 5, materialRuleRows.length, 'Center');
     freeze(mr, 4);
 
     const tr = context.workbook.worksheets.getItem('Thickness Rules');
@@ -459,9 +458,8 @@ export async function writeReports(
     const thicknessRuleRows = (rules.thicknessRules || []).map(x => [!!x.active, x.materialFilter || '', x.fromThickness ?? '', x.toThickness ?? '', x.reason || '']);
     header(tr, 4, ['Active', 'Material Filter (blank = any)', 'From Thickness (mm)', 'To Thickness (mm)', 'Reason / Notes'], theme);
     body(tr, 5, thicknessRuleRows, 5);
-    setWidths(tr, { A: 65, B: 220, C: 150, D: 150, E: 330 });
-    align(tr, ['A', 'C', 'D'], 5, thicknessRuleRows.length, 'Center');
-    wrapColumns(tr, ['B', 'E'], 5, thicknessRuleRows.length);
+    fitColumns(tr, `A4:E${Math.max(4, 4 + thicknessRuleRows.length)}`);
+    align(tr, ['A', 'B', 'C', 'D', 'E'], 5, thicknessRuleRows.length, 'Center');
     freeze(tr, 4);
 
     const data = await freshSheet(context, 'Comparison Data');
@@ -479,12 +477,8 @@ export async function writeReports(
       x.thicknessMatch, x.qtyMatch, x.mismatchType, x.status, x.familyKey
     ]);
     body(data, 2, dataRows, 24);
-    setWidths(data, {
-      A: 70, B: 140, C: 125, D: 230, E: 165, F: 90, G: 80, H: 220, I: 150, J: 150,
-      K: 110, L: 150, M: 165, N: 90, O: 80, P: 90, Q: 150, R: 150, S: 110, T: 110, U: 100, V: 250, W: 120, X: 140
-    });
-    wrapColumns(data, ['D', 'H', 'V'], 2, dataRows.length);
-    align(data, ['A', 'F', 'G', 'I', 'J', 'K', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'W'], 2, dataRows.length, 'Center');
+    fitColumns(data, `A1:X${Math.max(1, 1 + dataRows.length)}`);
+    align(data, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X'], 2, dataRows.length, 'Center');
     freeze(data, 1);
     data.visibility = 'Hidden';
 
