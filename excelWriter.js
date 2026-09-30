@@ -491,7 +491,7 @@ export async function writeReports(
     // Final pass: center every used/populated cell horizontally and vertically.
     // This intentionally overrides sheet-specific alignments so every report tab
     // has one consistent visual language.
-    for (const sheet of [summary, tab, mismatch, add, rem, review, audit, mr, tr]) {
+    for (const sheet of [summary, tab, mismatch, add, rem, review, audit, mr, tr, data]) {
       const used = sheet.getUsedRangeOrNullObject();
       used.load('isNullObject');
       await context.sync();
