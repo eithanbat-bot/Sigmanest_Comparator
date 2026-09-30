@@ -22,7 +22,10 @@ function setStatus(text, kind = 'info') {
     node.dataset.kind = kind;
 }
 function setStep(id, text) { el(id).textContent = text; }
-function countBadge(id, n) { el(id).textContent = String(n); }
+function countBadge(id, n) {
+    const node = el(id);
+    if (node) node.textContent = String(n);
+}
 function renderTabs() {
     const container = el('tab-list');
     container.innerHTML = '';
