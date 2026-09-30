@@ -41,7 +41,8 @@ function addGrid(sheet, rangeAddress) { const r=sheet.getRange(rangeAddress); r.
 function freeze(sheet,row){ sheet.freezePanes.freezeRows(row); }
 function summaryButton(sheet, address, text) { const r=sheet.getRange(address); r.merge(false); r.getCell(0,0).values=[[text]]; r.format.fill.color=BUTTON_BLUE; r.format.font.color='#FFFFFF'; r.format.font.bold=true; r.format.horizontalAlignment='Center'; r.format.verticalAlignment='Center'; }
 export async function writeReports(result, rules={materialRules:[], thicknessRules:[]}, settings={headerFillColor:BLUE,headerTextColor:'#FFFFFF',headerFontFamily:'Calibri',headerFontSize:10}) {
- await Excel.run(async context=>{\n  const theme={fill:settings.headerFillColor||BLUE,text:settings.headerTextColor||'#FFFFFF',font:settings.headerFontFamily||'Calibri',size:Number(settings.headerFontSize)||10};
+ await Excel.run(async context=>{
+  const theme={fill:settings.headerFillColor||BLUE,text:settings.headerTextColor||'#FFFFFF',font:settings.headerFontFamily||'Calibri',size:Number(settings.headerFontSize)||10};
   for(const n of managedSheets){const old=context.workbook.worksheets.getItemOrNullObject(n);old.load('isNullObject');await context.sync();if(!old.isNullObject){old.delete();await context.sync();}}
   const summary=await getOrCreateSheet(context,'Summary');
   title(summary,'SigmaNEST CL / WS Comparator','I','Control panel, run status and headline counts.');
