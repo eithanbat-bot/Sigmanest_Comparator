@@ -37,12 +37,15 @@ function materialRuleMatches(original, thickness, rule) {
 }
 
 function applyMaterialRules(original, thickness, rules) {
-    let current = original ?? '';
-    for (const rule of rules.filter(r => r.active)) {
-        if (materialRuleMatches(current, thickness, rule))
-            current = rule.materialA;
-    }
-    return current;
+    const source = original ?? '';
+    const matches = rules.filter(rule => materialRuleMatches(source, thickness, rule));
+    if (!matches.length) return source;
+
+    // Treat material rules as equivalences, not an order-dependent replacement chain.
+    // Prefer a rule whose Material A is the original value; otherwise use the
+    // first explicitly defined canonical side.
+    const preferred = matches.find(rule => eq(rule.materialA, source)) || matches[0];
+    return preferred.materialA;
 }
 
 function materialsEquivalent(a, b, thicknessA, thicknessB, rules) {
