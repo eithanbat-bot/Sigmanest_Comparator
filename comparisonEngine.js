@@ -13,14 +13,47 @@ function applyThicknessRules(original, material, rules) {
     }
     return original;
 }
+function ruleThickness(rule) {
+    if (rule === null || rule === undefined) return undefined;
+    const raw = rule.thicknessRule;
+    if (raw === null || raw === undefined || String(raw).trim() === '') return undefined;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : undefined;
+}
+
+function materialRuleMatches(original, thickness, rule) {
+    if (!rule || !rule.active) return false;
+    const a = String(rule.materialA ?? '').trim();
+    const b = String(rule.materialB ?? '').trim();
+    if (!a || !b) return false;
+
+    const material = String(original ?? '').trim();
+    const matchesMaterial = eq(a, material) || eq(b, material);
+    if (!matchesMaterial) return false;
+
+    const requiredThickness = ruleThickness(rule);
+    return requiredThickness === undefined ||
+        (thickness !== undefined && Math.abs(requiredThickness - Number(thickness)) < 1e-6);
+}
+
 function applyMaterialRules(original, thickness, rules) {
+    let current = original ?? '';
     for (const rule of rules.filter(r => r.active)) {
-        const matchesMaterial = eq(rule.materialA, original) || eq(rule.materialB, original);
-        const matchesThickness = rule.thicknessRule === undefined || (thickness !== undefined && Math.abs(rule.thicknessRule - thickness) < 1e-6);
-        if (matchesMaterial && matchesThickness)
-            return rule.materialA;
+        if (materialRuleMatches(current, thickness, rule))
+            current = rule.materialA;
     }
-    return original;
+    return current;
+}
+
+function materialsEquivalent(a, b, thicknessA, thicknessB, rules) {
+    if (eq(a, b)) return true;
+
+    for (const rule of rules.filter(r => r.active)) {
+        const aMatches = materialRuleMatches(a, thicknessA, rule);
+        const bMatches = materialRuleMatches(b, thicknessB, rule);
+        if (aMatches && bMatches) return true;
+    }
+    return false;
 }
 function key(part, thickness, material) {
     const t = thickness === undefined ? '' : String(thickness);
@@ -113,6 +146,7 @@ export function compare(allClRecords, selectedTabs, wsRecords, clFileName, wsFil
     const wsByPart = new Map();
     const wsByFamily = new Map();
     const clPartSet = new Set(validCl.map(x => x.partNoNorm.toLowerCase()));
+    const clFamilySet = new Set(validCl.map(x => x.familyKey.toLowerCase()));
     for (const x of validWs) {
         const a = wsByPart.get(x.partNoNorm.toLowerCase()) ?? [];
         a.push(x);
@@ -127,6 +161,7 @@ export function compare(allClRecords, selectedTabs, wsRecords, clFileName, wsFil
         x.thicknessConflict = group.some(y => Math.abs((y.effectiveThickness ?? 0) - (x.effectiveThickness ?? 0)) > 1e-6);
         x.materialConflict = group.some(y => !eq(y.effectiveMaterial, x.effectiveMaterial));
         x.clPresent = clPartSet.has(x.partNoNorm.toLowerCase());
+        x.familyPresent = clFamilySet.has(x.familyKey.toLowerCase()) && !x.clPresent;
     }
     const seenWsKeys = new Set();
     for (const x of validWs) {
@@ -191,7 +226,7 @@ export function compare(allClRecords, selectedTabs, wsRecords, clFileName, wsFil
             row.wsSourceRow = first.source.sourceRow;
             row.wsThicknessConflict = exactCandidates.some(x => x.thicknessConflict);
             row.wsMaterialConflict = exactCandidates.some(x => x.materialConflict);
-            row.materialMatch = eq(row.clMaterial, row.wsMaterial);
+            row.materialMatch = materialsEquivalent(row.clMaterial, row.wsMaterial, row.clThickness, row.wsThickness, materialRules);
             row.thicknessMatch = row.wsThickness !== undefined && Math.abs(row.clThickness - row.wsThickness) < 1e-6;
             row.qtyMatch = row.wsQty !== undefined && Math.abs(row.clQty - row.wsQty) < 1e-6;
             const conflict = row.clMaterialConflict || row.clThicknessConflict || row.wsMaterialConflict || row.wsThicknessConflict;
