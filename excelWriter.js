@@ -167,6 +167,15 @@ function centerRange(sheet, address) {
   r.format.verticalAlignment = 'Center';
 }
 
+function addReviewCheckboxes(sheet, column, startRow, rowCount) {
+  if (!rowCount) return;
+  const range = sheet.getRange(`${column}${startRow}:${column}${startRow + rowCount - 1}`);
+  range.values = Array.from({ length: rowCount }, () => [false]);
+  range.control = { type: Excel.CellControlType.checkbox };
+  range.format.horizontalAlignment = 'Center';
+  range.format.verticalAlignment = 'Center';
+}
+
 function align(sheet, columns, startRow, rowCount, direction) {
   if (!rowCount) return;
   for (const col of columns) {
@@ -378,8 +387,9 @@ export async function writeReports(
     header(mismatch, 4, ['Part Number', 'WS Material', 'CL Material', 'WS Thickness', 'CL Thickness', 'WS Quantity', 'CL Quantity', 'Mismatch Type', 'CL Source Tabs', 'Reviewed?', 'Notes'], theme);
     body(mismatch, 5, mismatchRows.map(x => [
       x.partNoRaw, x.wsMaterial, x.clMaterial, x.wsThickness ?? '', x.clThickness, x.wsQty ?? '', x.clQty,
-      x.mismatchType, x.sourceTabs, '', ''
+      x.mismatchType, x.sourceTabs, false, ''
     ]), 11);
+    addReviewCheckboxes(mismatch, 'J', 5, mismatchRows.length);
     fitColumns(mismatch, `A4:K${Math.max(4, 4 + mismatchRows.length)}`);
     align(mismatch, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'], 5, mismatchRows.length, 'Center');
     freeze(mismatch, 4);
@@ -387,26 +397,28 @@ export async function writeReports(
     const addRows = result.rows.filter(x => x.status === 'Add');
     const add = context.workbook.worksheets.getItem('Parts in CL but not in WS');
     cleanSheet(add);
-    title(add, 'Parts required by the selected CL tabs but absent from the WS', 'H', 'These items are candidates for addition to the WS when the match is unambiguous.');
-    header(add, 4, ['Part Number', 'Description', 'Material', 'Thickness', 'Required Quantity', 'Source CL Tabs', 'Action', 'Notes'], theme);
+    title(add, 'Parts required by the selected CL tabs but absent from the WS', 'I', 'These items are candidates for addition to the WS when the match is unambiguous.');
+    header(add, 4, ['Part Number', 'Description', 'Material', 'Thickness', 'Required Quantity', 'Source CL Tabs', 'Action', 'Reviewed?', 'Notes'], theme);
     body(add, 5, addRows.map(x => [
-      x.partNoRaw, x.description, x.clMaterial, x.clThickness, x.clQty, x.sourceTabs, 'ADD', x.mismatchType
-    ]), 8);
-    fitColumns(add, `A4:H${Math.max(4, 4 + addRows.length)}`);
-    align(add, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], 5, addRows.length, 'Center');
+      x.partNoRaw, x.description, x.clMaterial, x.clThickness, x.clQty, x.sourceTabs, 'ADD', false, x.mismatchType
+    ]), 9);
+    addReviewCheckboxes(add, 'H', 5, addRows.length);
+    fitColumns(add, `A4:I${Math.max(4, 4 + addRows.length)}`);
+    align(add, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'], 5, addRows.length, 'Center');
     styleActionColumn(add, 5, addRows.map(() => 'ADD'), 'G');
     freeze(add, 4);
 
     const removeRows = result.removals || [];
     const rem = context.workbook.worksheets.getItem('Parts in WS but not in CL');
     cleanSheet(rem);
-    title(rem, 'Parts currently in the WS which are not required by any selected CL tab', 'H', 'Only unambiguous removals are listed here. Family/variant review items stay out of this list.');
-    header(rem, 4, ['Part Number', 'Material', 'Thickness', 'Current Quantity', 'WS Row', 'Action', 'Notes', 'Match Row'], theme);
+    title(rem, 'Parts currently in the WS which are not required by any selected CL tab', 'I', 'Only unambiguous removals are listed here. Family/variant review items stay out of this list.');
+    header(rem, 4, ['Part Number', 'Material', 'Thickness', 'Current Quantity', 'WS Row', 'Action', 'Reviewed?', 'Notes', 'Match Row'], theme);
     body(rem, 5, removeRows.map(x => [
-      x.partNoRaw, x.materialCanonical, x.thicknessRaw ?? '', x.qtyRaw ?? '', x.sourceRow, 'REMOVE', x.reason, x.removeRank
-    ]), 8);
-    fitColumns(rem, `A4:H${Math.max(4, 4 + removeRows.length)}`);
-    align(rem, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], 5, removeRows.length, 'Center');
+      x.partNoRaw, x.materialCanonical, x.thicknessRaw ?? '', x.qtyRaw ?? '', x.sourceRow, 'REMOVE', false, x.reason, x.removeRank
+    ]), 9);
+    addReviewCheckboxes(rem, 'G', 5, removeRows.length);
+    fitColumns(rem, `A4:I${Math.max(4, 4 + removeRows.length)}`);
+    align(rem, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'], 5, removeRows.length, 'Center');
     styleActionColumn(rem, 5, removeRows.map(() => 'REMOVE'), 'F');
     freeze(rem, 4);
 
