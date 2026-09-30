@@ -1,9 +1,9 @@
-import { APP_NAME, DEV_MODE, VERSION, defaultLicense } from './config.js';
+import { APP_NAME, DEV_MODE, VERSION, defaultLicense, DEFAULT_UI_SETTINGS } from './config.js';
 import { parseClFile, parseWsFile } from './parser.js';
 import { compare } from './comparisonEngine.js';
 import { MATERIAL_RULES, THICKNESS_RULES, cloneDefaultRules } from './rules.js';
 import { checkLicense, activateLicense } from './license.js';
-import { loadState, persistCl, persistWs, persistSelectionAndResult, persistRules } from './state.js';
+import { loadState, persistCl, persistWs, persistSelectionAndResult, persistRules, persistSettings } from './state.js';
 import { writeReports } from './excelWriter.js';
 import { buildRevisedWorkbook, triggerDownload, openRevisedWorkbookInExcel } from './revisedWs.js';
 import { detectJobNumber } from './textRules.js';
@@ -14,6 +14,7 @@ let license = defaultLicense;
 let materialRules = cloneDefaultRules().materialRules;
 let thicknessRules = cloneDefaultRules().thicknessRules;
 let activeRuleTab = 'material';
+let settings = { ...DEFAULT_UI_SETTINGS };
 function el(id) { return document.getElementById(id); }
 function setStatus(text, kind = 'info') {
     const node = el('status');
@@ -99,6 +100,11 @@ async function onWsFile(file) {
         setStatus(e.message, 'error');
     }
 }
+function normalizeHex(v, fallback) { return /^#[0-9A-F]{6}$/i.test(String(v || '')) ? String(v).toUpperCase() : fallback; }
+function renderSettings() { const ids=['header-fill','header-fill-hex','header-text','header-text-hex','header-font','header-font-size']; if(!el(ids[0])) return; el(ids[0]).value=settings.headerFillColor; el(ids[1]).value=settings.headerFillColor; el(ids[2]).value=settings.headerTextColor; el(ids[3]).value=settings.headerTextColor; el(ids[4]).value=settings.headerFontFamily; el(ids[5]).value=String(settings.headerFontSize); }
+function wireSettings() { [['header-fill','header-fill-hex','headerFillColor'],['header-text','header-text-hex','headerTextColor']].forEach(([a,b,k])=>{el(a).addEventListener('input',e=>{settings[k]=normalizeHex(e.target.value,DEFAULT_UI_SETTINGS[k]);el(b).value=settings[k];});el(b).addEventListener('change',e=>{settings[k]=normalizeHex(e.target.value,DEFAULT_UI_SETTINGS[k]);el(a).value=settings[k];e.target.value=settings[k];});});el('header-font').addEventListener('change',e=>settings.headerFontFamily=e.target.value);el('header-font-size').addEventListener('change',e=>settings.headerFontSize=Number(e.target.value)||10);el('btn-save-settings').addEventListener('click',()=>void saveSettings());el('btn-reset-settings').addEventListener('click',()=>void resetSettings()); }
+async function saveSettings(){await persistSettings(settings);setStatus('Report appearance saved. It will be used on the next generated report.','ok');}
+async function resetSettings(){settings={...DEFAULT_UI_SETTINGS};renderSettings();await persistSettings(settings);setStatus('Report appearance reset to defaults.','ok');}
 async function ensureLoadedFromState() {
     const s = await loadState();
     // File bytes are intentionally not persisted in this MVP. The add-in requires selecting files once per Excel session.
@@ -106,6 +112,7 @@ async function ensureLoadedFromState() {
     license = s.license || defaultLicense;
     if (Array.isArray(s.materialRules)) materialRules = s.materialRules;
     if (Array.isArray(s.thicknessRules)) thicknessRules = s.thicknessRules;
+    if (s.settings && typeof s.settings === 'object') settings = { ...DEFAULT_UI_SETTINGS, ...s.settings };
 }
 export async function runComparison() {
     if (!(await requireLicense()))
@@ -120,7 +127,7 @@ export async function runComparison() {
         const job = detectJobNumber(`${clData.fileName} ${wsData.fileName}`);
         lastResult = compare(clData.records, tabs, wsData.records, clData.fileName, wsData.fileName, job, materialRules, thicknessRules);
         await persistSelectionAndResult(tabs, lastResult);
-        await writeReports(lastResult, { materialRules, thicknessRules });
+        await writeReports(lastResult, { materialRules, thicknessRules }, settings);
         renderResults(lastResult);
         setStatus('Comparison complete. See the SN Summary and result sheets.', 'ok');
     }
@@ -236,6 +243,8 @@ export function initUi() {
     el('btn-save-rules').addEventListener('click',()=>void saveRules());
     el('btn-reset-rules').addEventListener('click',()=>void resetRules());
     renderRuleTables();
+    wireSettings();
+    renderSettings();
     el('btn-select-all').addEventListener('click', () => { el('tab-list').querySelectorAll('input').forEach(x => x.checked = true); updateSelectedCount(); });
     el('btn-select-bat').addEventListener('click', () => { el('tab-list').querySelectorAll('input').forEach(x => x.checked = /^BAT/i.test(x.dataset.sheet || '')); updateSelectedCount(); });
     el('btn-clear-all').addEventListener('click', () => { el('tab-list').querySelectorAll('input').forEach(x => x.checked = false); updateSelectedCount(); });
