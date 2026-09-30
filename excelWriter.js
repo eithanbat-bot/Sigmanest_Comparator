@@ -14,14 +14,32 @@ async function getOrCreateSheet(context, name) {
 }
 function setWidths(sheet, widths) { for (const [col, width] of Object.entries(widths)) sheet.getRange(`${col}:${col}`).format.columnWidth = width; }
 function title(sheet, text, lastCol, subtitle='') {
-    const r = sheet.getRange(`A1:${lastCol}1`); r.merge(false); r.values=[[text]]; r.format.font.name='Calibri'; r.format.font.size=16; r.format.font.bold=true; r.format.font.color=BLUE; r.format.horizontalAlignment='Center'; r.format.verticalAlignment='Center';
-    if (subtitle) { const s=sheet.getRange(`A2:${lastCol}2`); s.merge(false); s.values=[[subtitle]]; s.format.font.name='Calibri'; s.format.font.size=10; s.format.font.color=GREY; s.format.wrapText=true; }
+    const r = sheet.getRange(`A1:${lastCol}1`);
+    r.merge(false);
+    r.getCell(0,0).values=[[text]];
+    r.format.font.name='Calibri'; r.format.font.size=16; r.format.font.bold=true; r.format.font.color=BLUE; r.format.horizontalAlignment='Center'; r.format.verticalAlignment='Center';
+    if (subtitle) {
+        const s=sheet.getRange(`A2:${lastCol}2`);
+        s.merge(false);
+        s.getCell(0,0).values=[[subtitle]];
+        s.format.font.name='Calibri'; s.format.font.size=10; s.format.font.color=GREY; s.format.wrapText=true;
+    }
 }
 function header(sheet, row, cols) { const r=sheet.getRangeByIndexes(row-1,0,1,cols.length); r.values=[cols]; r.format.fill.color=BLUE; r.format.font.color='#FFFFFF'; r.format.font.bold=true; r.format.font.size=10; r.format.horizontalAlignment='Center'; r.format.verticalAlignment='Center'; r.format.wrapText=true; }
-function body(sheet, startRow, values, cols) { if(!values.length)return; const r=sheet.getRangeByIndexes(startRow-1,0,values.length,cols); r.values=values.map(x=>x.map(stringify)); r.format.font.name='Calibri'; r.format.font.size=11; r.format.wrapText=true; r.format.verticalAlignment='Center'; }
+function body(sheet, startRow, values, cols) {
+    if(!values.length)return;
+    const normalized = values.map(row => {
+        const out = Array.isArray(row) ? row.slice(0, cols) : [];
+        while (out.length < cols) out.push('');
+        return out.map(stringify);
+    });
+    const r=sheet.getRangeByIndexes(startRow-1,0,normalized.length,cols);
+    r.values=normalized;
+    r.format.font.name='Calibri'; r.format.font.size=11; r.format.wrapText=true; r.format.verticalAlignment='Center';
+}
 function addGrid(sheet, rangeAddress) { const r=sheet.getRange(rangeAddress); r.format.borders.getItem('EdgeTop').style='Continuous'; r.format.borders.getItem('EdgeBottom').style='Continuous'; r.format.borders.getItem('EdgeLeft').style='Continuous'; r.format.borders.getItem('EdgeRight').style='Continuous'; r.format.borders.getItem('InsideHorizontal').style='Continuous'; r.format.borders.getItem('InsideVertical').style='Continuous'; }
 function freeze(sheet,row){ sheet.freezePanes.freezeRows(row); }
-function summaryButton(sheet, address, text) { const r=sheet.getRange(address); r.values=[[text]]; r.format.fill.color=BUTTON_BLUE; r.format.font.color='#FFFFFF'; r.format.font.bold=true; r.format.horizontalAlignment='Center'; r.format.verticalAlignment='Center'; }
+function summaryButton(sheet, address, text) { const r=sheet.getRange(address); r.merge(false); r.getCell(0,0).values=[[text]]; r.format.fill.color=BUTTON_BLUE; r.format.font.color='#FFFFFF'; r.format.font.bold=true; r.format.horizontalAlignment='Center'; r.format.verticalAlignment='Center'; }
 export async function writeReports(result, rules={materialRules:[], thicknessRules:[]}) {
  await Excel.run(async context=>{
   for(const n of managedSheets){const old=context.workbook.worksheets.getItemOrNullObject(n);old.load('isNullObject');await context.sync();if(!old.isNullObject){old.delete();await context.sync();}}
