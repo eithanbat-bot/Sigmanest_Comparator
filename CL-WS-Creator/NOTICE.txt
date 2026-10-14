@@ -1,0 +1,4 @@
+CL - WS Creator deployment assets
+Copyright (C) 2026 Eithan Meyer, for original material owned by Eithan Meyer. All rights reserved to the extent of those rights. Proprietary software; third-party components remain with their respective owners. These minified static client assets are published solely to operate the Excel add-in. No general licence to reuse, modify, or redistribute Eithan-owned code is granted by this deployment.
+
+The source repository and local bridge/server implementation remain private. Client-side JavaScript is delivered to the web view for execution and is therefore inspectable by a determined user; minification is not a security boundary.
