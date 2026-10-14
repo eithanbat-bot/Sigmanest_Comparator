@@ -66,3 +66,39 @@ footer{display:flex;justify-content:space-between;gap:8px;font-size:10px;color:#
 .removeMapping{padding:6px 5px;background:#fee2e2;color:#991b1b;font-size:10px;white-space:nowrap}
 .normActions{margin-top:9px;justify-content:flex-end;flex-wrap:wrap}
 .normActions button{min-height:34px}
+/* Full-screen workspace dialog */
+.heroActions{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
+.heroActions button{white-space:nowrap;min-height:34px}
+[hidden]{display:none!important}
+body.fullscreenMode{min-height:100vh;background:#f3f6f9}
+body.fullscreenMode .app{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));align-content:start;gap:12px;max-width:none;margin:0;padding:16px 20px}
+body.fullscreenMode .hero{grid-column:1/-1;margin:0;align-items:center}
+body.fullscreenMode .hero h1{font-size:30px}
+body.fullscreenMode .hero p{max-width:920px;font-size:14px}
+body.fullscreenMode .card{min-width:0;margin:0;padding:16px}
+body.fullscreenMode #clWorkbookCard,body.fullscreenMode #clSheetsCard,body.fullscreenMode #librariesCard{grid-column:span 4}
+body.fullscreenMode #normalizationCard,body.fullscreenMode #workspaceCard{grid-column:span 6}
+body.fullscreenMode #actionCard{grid-column:span 5}
+body.fullscreenMode #releaseResultsCard{grid-column:span 7}
+body.fullscreenMode #sheetList{max-height:180px}
+body.fullscreenMode .tableWrap{max-height:48vh;max-width:100%}
+body.fullscreenMode table{font-size:12px}
+body.fullscreenMode th,body.fullscreenMode td{padding:8px 10px}
+body.fullscreenMode .summaryGrid strong{font-size:22px}
+body.fullscreenMode .summaryGrid span{font-size:11px}
+body.fullscreenMode .sectionTitle{font-size:15px}
+body.fullscreenMode input{font-size:13px;padding:9px 10px}
+body.fullscreenMode button{font-size:13px;padding:9px 14px}
+body.fullscreenMode footer{grid-column:1/-1;padding-top:0}
+@media(max-width:1100px){
+  body.fullscreenMode .app{grid-template-columns:repeat(2,minmax(0,1fr))}
+  body.fullscreenMode .hero,body.fullscreenMode footer{grid-column:1/-1}
+  body.fullscreenMode #clWorkbookCard,body.fullscreenMode #clSheetsCard,body.fullscreenMode #librariesCard,body.fullscreenMode #normalizationCard,body.fullscreenMode #workspaceCard,body.fullscreenMode #actionCard,body.fullscreenMode #releaseResultsCard{grid-column:span 1}
+}
+@media(max-width:650px){
+  body.fullscreenMode .app{display:block;padding:10px}
+  body.fullscreenMode .hero,body.fullscreenMode .card{margin-bottom:10px}
+  body.fullscreenMode .hero{align-items:flex-start}
+  body.fullscreenMode #clWorkbookCard,body.fullscreenMode #clSheetsCard,body.fullscreenMode #librariesCard,body.fullscreenMode #normalizationCard,body.fullscreenMode #workspaceCard,body.fullscreenMode #actionCard,body.fullscreenMode #releaseResultsCard{margin-bottom:10px}
+  body.fullscreenMode footer{padding:8px 2px}
+}
