@@ -11,7 +11,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>CL - WS Creator</title>
-  <link rel="stylesheet" href="taskpane.css?v=2.32.35">
+  <link rel="stylesheet" href="taskpane.css?v=2.32.36">
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
@@ -23,10 +23,14 @@
       <h1>CL - WS Creator</h1>
       <p>Import CL geometry and verify its saved production data first. Then use this add-in's green AutoTask button to create tasks with the saved batch multipliers and order labels.</p>
     </div>
-    <div id="statusPill" class="pill neutral">Starting...</div>
+    <div class="heroActions">
+      <button id="openFullscreen" class="secondary" type="button">Open Full Screen</button>
+      <button id="closeFullscreen" class="secondary" type="button" hidden>Close Full Screen</button>
+      <div id="statusPill" class="pill neutral">Starting...</div>
+    </div>
   </header>
 
-  <section class="card">
+  <section id="clWorkbookCard" class="card">
     <div class="sectionTitle">1. Choose CL workbook</div>
     <div class="row">
       <input id="clFile" type="file" accept=".xlsx,.xls" hidden>
@@ -37,7 +41,7 @@
     <div id="clFileStatus" class="muted">Select the cutting-list .xlsx/.xls file from this PC.</div>
   </section>
 
-  <section class="card">
+  <section id="clSheetsCard" class="card">
     <div class="sectionTitle">2. CL sheets</div>
     <div class="row between">
       <button id="refreshSheets" class="secondary" type="button" disabled>Reload CL sheets</button>
@@ -46,7 +50,7 @@
     <div id="sheetList" class="sheetList empty">Choose a CL workbook first.</div>
   </section>
 
-  <section class="card">
+  <section id="librariesCard" class="card">
     <div class="sectionTitle">3. Geometry Libraries</div>
     <label for="libraryPath">Main .PRS server folder</label>
     <input id="libraryPath" type="text" placeholder="S:\SNDataX1\PARTS">
@@ -58,7 +62,7 @@
     <div id="libraryStatus" class="muted">PRS is searched recursively. DXF uses a persistent index under Y:\; the index is built in the background and refreshed overnight.</div>
   </section>
 
-  <section class="card">
+  <section id="normalizationCard" class="card">
     <div class="sectionTitle">4. Material Normalisation</div>
     <div class="muted">Match material names from the cutting list (CL) to the exact material name in your SigmaNEST workspace/library (WS). WS Material should be the material linked to the correct Tec file in your SigmaNEST setup.</div>
     <div class="materialMapWrap">
@@ -74,7 +78,7 @@
     <div id="materialNormalizationStatus" class="muted">Loading material normalisation settings…</div>
   </section>
 
-  <section class="card">
+  <section id="workspaceCard" class="card">
     <div class="sectionTitle">5. Workspace</div>
     <label for="jobName">Job name</label>
     <input id="jobName" type="text" placeholder="J032-26">
@@ -83,7 +87,7 @@
     <div class="muted">Import Geometry creates this workspace. AutoTask reads this saved .ws only; it does not import geometry again. Use the green add-in button below for managed tasking.</div>
   </section>
 
-  <section class="card actionCard">
+  <section id="actionCard" class="card actionCard">
     <div class="sectionTitle">5. Actions</div>
     <div class="actionGrid">
       <button id="preview" class="secondary actionButton" type="button" disabled>Preview CL</button>
@@ -93,7 +97,7 @@
     <div id="buildStatus" class="muted">Workflow: Import Geometry Only → review Import Data Check → click the green Run Add-in AutoTask + Label Order button. The add-in creates material/thickness-grouped, correctly labelled tasks at Batch 1. Adjust the batch settings manually in SigmaNEST afterward.</div>
   </section>
 
-  <section class="card">
+  <section id="releaseResultsCard" class="card">
     <div class="sectionTitle">Release Results</div>
     <div class="summaryBanner"><strong id="releaseTitle">Ready</strong><span id="releaseDetail">No action has been run yet.</span></div>
     <div class="summaryGrid">
@@ -110,10 +114,11 @@
     </div>
   </section>
 
-  <footer><span>Front-end 2.32.32 — DXF-first / CL production data</span><span id="bridgeVersion">Local bridge: 127.0.0.1:17832</span></footer>
+  <footer><span>Front-end 2.32.36 — DXF-first / CL production data</span><span id="bridgeVersion">Local bridge: 127.0.0.1:17832</span></footer>
 </main>
 
-<script src="src/clParser.min.js?v=2.32.35"></script>
-<script src="taskpane.min.js?v=2.32.35"></script>
+<script src="src/clParser.min.js?v=2.32.36"></script>
+<script src="taskpane.min.js?v=2.32.36"></script>
+<script src="fullscreen.js?v=2.32.36"></script>
 </body>
 </html>
